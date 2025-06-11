@@ -1,2 +1,2 @@
-# at-library
+# qa-library
 AQA test framework
