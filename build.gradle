@@ -1,0 +1,84 @@
+plugins {
+    id 'maven-publish'
+    id 'io.freefair.lombok'
+    id 'pl.allegro.tech.build.axion-release'
+}
+
+scmVersion {
+    useHighestVersion = true
+    versionIncrementer { context -> return context.currentVersion }
+    versionCreator("versionWithBranch")
+    repository { type = 'git' }
+    tag { prefix = '' }
+    nextVersion { suffix = 'SNAPSHOT' }
+}
+
+group = 'com.qa.atlibs'
+version = scmVersion.version
+
+subprojects {
+    if (project.name != 'qa-lib-bom') {
+        apply plugin: 'java-library'
+        apply plugin: 'checkstyle'
+        apply plugin: 'maven-publish'
+        apply plugin: 'io.freefair.lombok'
+
+        project.version = scmVersion.version
+
+        dependencies {
+            implementation(platform(project(':qa-lib-bom')))
+        }
+
+        configurations.configureEach {
+            resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+        }
+
+        java {
+            withJavadocJar()
+            withSourcesJar()
+            sourceCompatibility = JavaVersion.VERSION_21
+            targetCompatibility = JavaVersion.VERSION_21
+        }
+
+        tasks.withType(JavaCompile).configureEach {
+            options.encoding = 'UTF-8'
+            options.release = 21
+            options.deprecation = true
+            options.compilerArgs << "-Xlint:deprecation" << "-Xlint:unchecked"
+            options.compilerArgs.add("-parameters")
+        }
+
+        publishing {
+            publications {
+                mavenJava(MavenPublication) {
+                    pom {
+                        groupId = rootProject.group
+                        version = rootProject.version
+                        name = project.name
+                        artifactId = project.name
+                    }
+                    from components.java
+                }
+            }
+            repositories {
+                maven {
+                    credentials {
+                        username = ""
+                        password = ""
+                    }
+                    url = project.version.toString().endsWith('SNAPSHOT') ? "mavenSnapshotsRepoUrl" : "mavenReleasesRepoUrl"
+                }
+            }
+        }
+
+        checkstyle {
+            toolVersion = libs.versions.checkstyle.get()
+            configDirectory.set(file("${rootProject.projectDir}/checkstyle"))
+            ignoreFailures = true
+        }
+    }
+}
+
+wrapper {
+    gradleVersion = libs.versions.gradle.wrapper.get()
+}

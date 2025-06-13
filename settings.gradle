@@ -1,0 +1,28 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+    }
+    plugins {
+        id "io.freefair.lombok" version "8.13.1"
+        id "pl.allegro.tech.build.axion-release" version "1.18.18"
+    }
+}
+
+rootProject.name = 'qa-library'
+
+include 'qa-lib-core'
+include 'qa-lib-rest'
+include 'qa-lib-grpc'
+include 'qa-lib-bom'
+
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+    }
+    versionCatalogs {
+        libs {
+            version('gradle-wrapper', '8.13')
+            version('checkstyle', '10.25.0')
+        }
+    }
+}

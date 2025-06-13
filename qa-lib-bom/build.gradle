@@ -1,0 +1,16 @@
+plugins {
+    id 'java-platform'
+    id 'maven-publish'
+}
+
+ext {
+
+}
+
+dependencies {
+    constraints {
+        api project(":qa-lib-core")
+        api project(":qa-lib-rest")
+        api project(":qa-lib-grpc")
+    }
+}
