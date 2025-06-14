@@ -1,0 +1,17 @@
+env:
+  default:
+    apps:
+      your-app:
+        host: http://localhost
+        port: 8080
+        enabled: true
+      your-another-app:
+        host: http://localhost
+        port: 8081
+        enabled: false
+    test-data-dir: testdata
+    mock:
+      host: http://localhost
+      port: 8080
+      enabled: true
+      stubs-path: src/test/resources/stubs

@@ -1,19 +1,19 @@
-plugins {
-    id 'java'
-}
-
-group = 'com.qa.atlibs'
-version = 'unspecified'
-
-repositories {
-    mavenCentral()
-}
-
 dependencies {
-    testImplementation platform('org.junit:junit-bom:5.10.0')
-    testImplementation 'org.junit.jupiter:junit-jupiter'
-}
+    api 'org.slf4j:slf4j-api'
+    api 'org.slf4j:slf4j-simple'
 
-test {
-    useJUnitPlatform()
+    api 'com.fasterxml.jackson.core:jackson-databind'
+    api 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+    api 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+
+    api 'commons-io:commons-io'
+    api 'org.apache.commons:commons-text'
+    api 'org.apache.commons:commons-collections4'
+    api 'org.apache.commons:commons-lang3'
+
+    api 'org.junit.jupiter:junit-jupiter'
+    api 'org.junit.jupiter:junit-jupiter-params'
+    api 'org.junit.jupiter:junit-jupiter-engine'
+    api 'org.junit.jupiter:junit-jupiter-api'
+    api 'org.junit.platform:junit-platform-launcher'
 }

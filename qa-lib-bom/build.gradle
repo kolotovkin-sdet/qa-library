@@ -4,7 +4,16 @@ plugins {
 }
 
 ext {
+    junitVersion = '5.12.2'
+    junitPlatformLauncherVersion = '1.12.2'
+    commonsLang3Version = '3.13.0'
+    commonsCollections4Version = '4.4'
+    commonsIoVersion = '2.13.0'
+    commonsTextVersion = '1.12.0'
+    commonsCsvVersion = '1.13.0'
+    jacksonCoreVersion = '2.18.0'
 
+    slf4jVersion = '2.0.13'
 }
 
 dependencies {
@@ -12,5 +21,25 @@ dependencies {
         api project(":qa-lib-core")
         api project(":qa-lib-rest")
         api project(":qa-lib-grpc")
+
+        api "org.junit.jupiter:junit-jupiter:${junitVersion}"
+        api "org.junit.jupiter:junit-jupiter-params:${junitVersion}"
+        api "org.junit.jupiter:junit-jupiter-engine:${junitVersion}"
+        api "org.junit.jupiter:junit-jupiter-api:${junitVersion}"
+        api "org.junit.platform:junit-platform-launcher:${junitPlatformLauncherVersion}"
+        api "commons-io:commons-io:${commonsIoVersion}"
+        api "org.apache.commons:commons-text:${commonsTextVersion}"
+        api "org.apache.commons:commons-lang3:${commonsLang3Version}"
+        api "org.apache.commons:commons-collections4:${commonsCollections4Version}"
+        api "com.fasterxml.jackson.core:jackson-databind:${jacksonCoreVersion}"
+        api "com.fasterxml.jackson.core:jackson-core:${jacksonCoreVersion}"
+        api "com.fasterxml.jackson.core:jackson-annotations:${jacksonCoreVersion}"
+        api "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jacksonCoreVersion}"
+        api "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${jacksonCoreVersion}"
+        api "com.fasterxml.jackson.dataformat:jackson-dataformat-csv:${jacksonCoreVersion}"
+        api "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:${jacksonCoreVersion}"
+
+        api "org.slf4j:slf4j-api:${slf4jVersion}"
+        api "org.slf4j:slf4j-simple:${slf4jVersion}"
     }
 }
