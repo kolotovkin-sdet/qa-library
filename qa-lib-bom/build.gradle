@@ -6,14 +6,17 @@ plugins {
 ext {
     junitVersion = '5.12.2'
     junitPlatformLauncherVersion = '1.12.2'
-    commonsLang3Version = '3.13.0'
-    commonsCollections4Version = '4.4'
-    commonsIoVersion = '2.13.0'
+    commonsLang3Version = '3.14.0'
+    commonsCollections4Version = '4.5.0'
+    commonsIoVersion = '2.19.0'
     commonsTextVersion = '1.12.0'
-    commonsCsvVersion = '1.13.0'
+    commonsCsvVersion = '1.13.1'
     jacksonCoreVersion = '2.18.0'
-
-    slf4jVersion = '2.0.13'
+    slf4jVersion = '2.0.11'
+    grpcVersion = '1.69.0'
+    protobufVersion = '3.25.5'
+    assertjCoreVersion = '3.27.3'
+    jsonUnitVersion = '4.1.1'
 }
 
 dependencies {
@@ -41,5 +44,16 @@ dependencies {
 
         api "org.slf4j:slf4j-api:${slf4jVersion}"
         api "org.slf4j:slf4j-simple:${slf4jVersion}"
+
+        api "io.grpc:grpc-all:${grpcVersion}"
+        api "com.google.protobuf:protobuf-java:${protobufVersion}"
+        api "com.google.protobuf:protobuf-java-util:${protobufVersion}"
+
+        api "org.assertj:assertj-core:${assertjCoreVersion}"
+        api "net.javacrumbs.json-unit:json-unit-core:${jsonUnitVersion}"
+        api "net.javacrumbs.json-unit:json-unit:${jsonUnitVersion}"
+        api "net.javacrumbs.json-unit:json-unit-fluent:${jsonUnitVersion}"
+        api "net.javacrumbs.json-unit:json-unit-assertj:${jsonUnitVersion}"
+
     }
 }

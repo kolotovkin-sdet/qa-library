@@ -11,6 +11,20 @@ dependencies {
     api 'org.apache.commons:commons-collections4'
     api 'org.apache.commons:commons-lang3'
 
+    api 'org.assertj:assertj-core'
+    api('net.javacrumbs.json-unit:json-unit-core') {
+        exclude group: "org.hamcrest"
+    }
+    api('net.javacrumbs.json-unit:json-unit') {
+        exclude group: "org.hamcrest"
+    }
+    api('net.javacrumbs.json-unit:json-unit-fluent') {
+        exclude group: "org.hamcrest"
+    }
+    api('net.javacrumbs.json-unit:json-unit-assertj') {
+        exclude group: "org.hamcrest"
+    }
+
     api 'org.junit.jupiter:junit-jupiter'
     api 'org.junit.jupiter:junit-jupiter-params'
     api 'org.junit.jupiter:junit-jupiter-engine'

@@ -19,7 +19,6 @@ version = scmVersion.version
 subprojects {
     if (project.name != 'qa-lib-bom') {
         apply plugin: 'java-library'
-        apply plugin: 'checkstyle'
         apply plugin: 'maven-publish'
         apply plugin: 'io.freefair.lombok'
 
@@ -69,12 +68,6 @@ subprojects {
                     url = project.version.toString().endsWith('SNAPSHOT') ? "mavenSnapshotsRepoUrl" : "mavenReleasesRepoUrl"
                 }
             }
-        }
-
-        checkstyle {
-            toolVersion = libs.versions.checkstyle.get()
-            configDirectory.set(file("${rootProject.projectDir}/checkstyle"))
-            ignoreFailures = true
         }
     }
 }
