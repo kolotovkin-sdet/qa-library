@@ -34,16 +34,12 @@ jobs:
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
           restore-keys: |
             ${{ runner.os }}-gradle-
-
       - name: Set Gradle user home
         run: echo "GRADLE_USER_HOME=${{ github.workspace }}/.gradle" >> $GITHUB_ENV
-
       - name: Display Gradle version
         run: ./gradlew -v
-
       - name: Clean, build and check
         run: ./gradlew clean build check
-
       - name: Publish
         run: ./gradlew publish
 
