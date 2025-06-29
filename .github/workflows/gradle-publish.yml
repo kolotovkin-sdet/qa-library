@@ -47,6 +47,9 @@ jobs:
   build-and-publish:
     runs-on: ubuntu-latest
     needs: setup
+    if: |
+      github.ref != 'refs/tags/*' &&
+      github.ref != 'refs/heads/release/*'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -62,15 +65,9 @@ jobs:
         run: |
           docker push ${{ env.IMAGE_NAME }}:${{ env.VERSION }}
 
-    if: |
-      github.ref != 'refs/tags/*' &&
-      github.ref != 'refs/heads/release/*' &&
-      github.event_name != 'pull_request'
-
-
   create-release:
     runs-on: ubuntu-latest
-    needs: setup
+    needs: build-and-publish
     if: github.ref == 'refs/heads/main'
     steps:
       - name: Checkout code
@@ -95,7 +92,7 @@ jobs:
 
   manual-release:
     runs-on: ubuntu-latest
-    needs: setup
+    needs: build-and-publish
     if: github.ref == 'refs/heads/main'
     steps:
       - name: Checkout code
