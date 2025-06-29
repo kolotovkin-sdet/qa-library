@@ -11,10 +11,6 @@ on:
 
 env:
   GRADLE_USER_HOME: ${{ github.workspace }}/.gradle
-  NEXUS_USER: ${{ secrets.NEXUS_USER }}
-  NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
-  SNAPSHOT_DEPLOYMENT_REPOSITORY: ${{ secrets.SNAPSHOT_DEPLOYMENT_REPOSITORY }}
-  RELEASE_DEPLOYMENT_REPOSITORY: ${{ secrets.RELEASE_DEPLOYMENT_REPOSITORY }}
   GIT_PUSH_TOKEN: ${{ secrets.GIT_PUSH_TOKEN }}
 
 jobs:
@@ -48,24 +44,20 @@ jobs:
       - name: Clean, build and check
         run: ./gradlew clean build check
 
-
   build-and-publish:
     runs-on: ubuntu-latest
     needs: setup
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Build Docker image
         run: |
           docker build -t ${{ env.IMAGE_NAME }}:${{ env.VERSION }} .
-
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v4
         with:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Push Docker image to GHCR
         run: |
           docker push ${{ env.IMAGE_NAME }}:${{ env.VERSION }}
@@ -75,23 +67,22 @@ jobs:
       github.ref != 'refs/heads/release/*' &&
       github.event_name != 'pull_request'
 
+
   create-release:
     runs-on: ubuntu-latest
     needs: setup
+    if: github.ref == 'refs/heads/main'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Set up Git configuration
         run: |
           git fetch origin
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
           git remote set-url origin "https://oauth2:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
-
       - name: Display project version
         run: ./gradlew cV
-
       - name: Create Release Branch
         run: |
           if [ "${{ github.event_name }}" == "push" ] && [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
@@ -101,11 +92,11 @@ jobs:
             fi
             ./gradlew publish
           fi
-        if: github.ref == 'refs/heads/main'
 
   manual-release:
     runs-on: ubuntu-latest
     needs: setup
+    if: github.ref == 'refs/heads/main'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -116,4 +107,3 @@ jobs:
             echo "Release process triggered manually."
             ./gradlew release -Prelease.disableChecks -Prelease.pushTagsOnly -Prelease.versionIncrementer=${{ github.event.inputs.RELEASE_TYPE }}
           fi
-    if: github.ref == 'refs/heads/main'
