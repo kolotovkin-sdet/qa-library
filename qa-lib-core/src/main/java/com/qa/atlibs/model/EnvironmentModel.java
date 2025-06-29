@@ -1,9 +1,9 @@
-package com.qa.atlibs.environment;
+package com.qa.atlibs.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
 
-public record EnvironmentConfigurationModel(
+public record EnvironmentModel(
         Map<String, Environment> environment
 ) {
 

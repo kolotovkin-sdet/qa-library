@@ -36,5 +36,9 @@ public class SessionManager {
 		matcher.appendTail(result);
 		return result.toString();
 	}
+
+	public static String processTestData(String data) {
+		return setSessionVariables(data);
+	}
 }
 

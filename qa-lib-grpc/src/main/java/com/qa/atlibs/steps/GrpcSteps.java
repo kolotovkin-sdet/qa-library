@@ -5,10 +5,10 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
 import com.qa.atlibs.exception.GrpcTestException;
 import com.qa.atlibs.manager.GrpcManager;
+import com.qa.atlibs.manager.SessionManager;
 import com.qa.atlibs.manager.TestDataManager;
 import com.qa.atlibs.model.GrpcRequest;
 import com.qa.atlibs.model.GrpcResponse;
-import com.qa.atlibs.util.CoreQaUtil;
 import com.qa.atlibs.util.GrpcQaUtil;
 import io.grpc.Metadata;
 import io.grpc.Status;
@@ -44,7 +44,7 @@ public class GrpcSteps<Req extends Message, Res extends Message> {
     public GrpcSteps<Req, Res> metadataForRequestAre(Map<String, String> metadataHeaders) {
         for (Map.Entry<String, String> entry : metadataHeaders.entrySet()) {
             grpcRequest.getRequestMetadata().put(Metadata.Key.of(entry.getKey(), Metadata.ASCII_STRING_MARSHALLER),
-                    CoreQaUtil.processTestData(entry.getValue()));
+                    SessionManager.processTestData(entry.getValue()));
 
         }
         MetadataUtils.newAttachHeadersInterceptor(grpcRequest.getRequestMetadata());
@@ -54,14 +54,14 @@ public class GrpcSteps<Req extends Message, Res extends Message> {
     public GrpcSteps<Req, Res> jsonBodyForRequestIs(String requestBodyPath) throws InvalidProtocolBufferException {
         grpcRequest.setRequestBody(
                 GrpcQaUtil.toProto(
-                        CoreQaUtil.processTestData(
+                        SessionManager.processTestData(
                                 TestDataManager.getTestFileData(requestBodyPath)),
                         grpcRequest.getRequestClazz()));
         return this;
     }
 
     public GrpcSteps<Req, Res> jsonStringForRequestIs(String requestBody) throws InvalidProtocolBufferException {
-        grpcRequest.setRequestBody(GrpcQaUtil.toProto(CoreQaUtil.processTestData(requestBody), grpcRequest.getRequestClazz()));
+        grpcRequest.setRequestBody(GrpcQaUtil.toProto(SessionManager.processTestData(requestBody), grpcRequest.getRequestClazz()));
         return this;
     }
 
@@ -70,7 +70,7 @@ public class GrpcSteps<Req extends Message, Res extends Message> {
                 .map(body -> {
                     try {
                         return GrpcQaUtil.toProto(
-                                CoreQaUtil.processTestData(
+                                SessionManager.processTestData(
                                         TestDataManager.getTestFileData(body)),
                                 grpcRequest.getRequestClazz());
                     } catch (InvalidProtocolBufferException e) {
@@ -87,7 +87,7 @@ public class GrpcSteps<Req extends Message, Res extends Message> {
         var processedBodies = requestBodies.stream()
                 .map(body -> {
                     try {
-                        return GrpcQaUtil.toProto(CoreQaUtil.processTestData(body), grpcRequest.getRequestClazz());
+                        return GrpcQaUtil.toProto(SessionManager.processTestData(body), grpcRequest.getRequestClazz());
                     } catch (InvalidProtocolBufferException e) {
                         throw new RuntimeException(e);
                     }
@@ -177,7 +177,7 @@ public class GrpcSteps<Req extends Message, Res extends Message> {
     }
 
     public GrpcSteps<Req, Res> failedResponseStatusIs(String description) {
-        assertThat(grpcResponse.getDescription()).isEqualTo(CoreQaUtil.processTestData(description));
+        assertThat(grpcResponse.getDescription()).isEqualTo(SessionManager.processTestData(description));
         return this;
     }
 
@@ -190,7 +190,7 @@ public class GrpcSteps<Req extends Message, Res extends Message> {
         assertThat(grpcResponse.getStatus()).isEqualTo(Status.OK);
 
         try {
-            String expectedResult = CoreQaUtil.processTestData(TestDataManager.getTestFileData(responseBodyPath));
+            String expectedResult = SessionManager.processTestData(TestDataManager.getTestFileData(responseBodyPath));
             String actualResult = GrpcQaUtil.toJson(grpcResponse.getResponseBody());
 
             assertThatJson(actualResult).isEqualTo(expectedResult);
@@ -208,7 +208,7 @@ public class GrpcSteps<Req extends Message, Res extends Message> {
         assertThat(actualMetadata.keySet()).containsExactlyElementsOf(metadataHeaders.keySet());
 
         metadataHeaders.forEach((key, expectedValue) -> {
-            String processedExpectedValue = CoreQaUtil.processTestData(expectedValue);
+            String processedExpectedValue = SessionManager.processTestData(expectedValue);
             String actualValue = actualMetadata.get(key);
             assertThat(actualValue).isEqualTo(processedExpectedValue);
         });
@@ -229,14 +229,14 @@ public class GrpcSteps<Req extends Message, Res extends Message> {
         assertThat(grpcResponse.getResponseBodies()).hasSize(responseBodyPaths.size());
 
         var processedExpectedResponses = responseBodyPaths.stream()
-                .map(body -> CoreQaUtil.processTestData(TestDataManager.getTestFileData(body)))
+                .map(body -> SessionManager.processTestData(TestDataManager.getTestFileData(body)))
                 .sorted()
                 .toList();
 
         var processedActualResponses = grpcResponse.getResponseBodies().stream()
                 .map(body -> {
                     try {
-                        return CoreQaUtil.processTestData(TestDataManager.getTestFileData(GrpcQaUtil.toJson((Res) body)));
+                        return SessionManager.processTestData(TestDataManager.getTestFileData(GrpcQaUtil.toJson((Res) body)));
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }

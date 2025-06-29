@@ -1,6 +1,6 @@
 package com.qa.atlibs.manager;
 
-import com.qa.atlibs.environment.EnvironmentConfigurationModel;
+import com.qa.atlibs.model.EnvironmentModel;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import lombok.Getter;
@@ -35,7 +35,7 @@ public class GrpcManager {
         managedChannels.values().forEach(ManagedChannel::shutdownNow);
     }
 
-    private static EnvironmentConfigurationModel.AppConfig getApplicationConfig(String application) {
+    private static EnvironmentModel.AppConfig getApplicationConfig(String application) {
         return Optional.ofNullable(EnvironmentManager.getEnvironmentVariables().appsConfig().appConfig().get(application))
                 .orElseThrow(() ->
                         new NoSuchElementException("""

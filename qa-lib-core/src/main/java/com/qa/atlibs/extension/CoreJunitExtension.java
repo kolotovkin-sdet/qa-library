@@ -1,6 +1,6 @@
 package com.qa.atlibs.extension;
 
-import com.qa.atlibs.manager.EnumSessionProcessor;
+import com.qa.atlibs.processors.EnumSessionProcessor;
 import com.qa.atlibs.session.Session;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
