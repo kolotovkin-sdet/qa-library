@@ -64,8 +64,8 @@ subprojects {
                     name = "GitHubPackages"
                     url = uri("https://maven.pkg.github.com/kolotovkin-sdet/${rootProject.name}")
                     credentials {
-                        username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
-                        password = project.findProperty("gpr.token") ?: System.getenv("GITHUB_TOKEN")
+                        username = System.getenv("GITHUB_ACTOR")
+                        password = System.getenv("GITHUB_TOKEN")
                     }
                 }
             }

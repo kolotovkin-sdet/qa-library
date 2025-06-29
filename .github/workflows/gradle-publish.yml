@@ -11,7 +11,7 @@ on:
 
 env:
   GRADLE_USER_HOME: ${{ github.workspace }}/.gradle
-  GIT_PUSH_TOKEN: ${{ secrets.GIT_PUSH_TOKEN }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
   build-and-publish:
