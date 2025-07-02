@@ -60,7 +60,7 @@ jobs:
         run: ./gradlew cV
       - name: Create Release Branch
         run: |
-          if [ "${{ github.event_name }}" == "push" ] && [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
+          if [ "${{ github.event_name }}" == "push" ] && [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
             ./gradlew release -Prelease.disableChecks -Prelease.pushTagsOnly -Prelease.versionIncrementer=${{ github.event.inputs.RELEASE_TYPE }}
             if [ "${{ github.event.inputs.RELEASE_TYPE }}" != "incrementPatch" ]; then
               ./gradlew createReleaseBranch
@@ -75,7 +75,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Release creation step (manual)
         run: |
           if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
