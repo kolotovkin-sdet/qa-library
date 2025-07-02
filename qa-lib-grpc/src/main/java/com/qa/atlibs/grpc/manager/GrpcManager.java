@@ -1,5 +1,6 @@
 package com.qa.atlibs.grpc.manager;
 
+import com.qa.atlibs.core.manager.EnvironmentManager;
 import com.qa.atlibs.core.model.EnvironmentModel;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
