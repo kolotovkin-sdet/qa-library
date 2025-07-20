@@ -1,8 +1,8 @@
 dependencies {
     implementation project(':qa-lib-core')
 
-    implementation 'io.grpc:grpc-all'
-    implementation 'com.google.protobuf:protobuf-java'
-    implementation 'com.google.protobuf:protobuf-java-util'
+    api 'io.grpc:grpc-all'
+    api 'com.google.protobuf:protobuf-java'
+    api 'com.google.protobuf:protobuf-java-util'
 }
 

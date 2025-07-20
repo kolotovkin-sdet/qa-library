@@ -33,7 +33,7 @@ subprojects {
         }
 
         java {
-            withJavadocJar()
+//            withJavadocJar()
             withSourcesJar()
             sourceCompatibility = JavaVersion.VERSION_21
             targetCompatibility = JavaVersion.VERSION_21
@@ -61,16 +61,51 @@ subprojects {
             }
             repositories {
                 maven {
+                    name = "GitHubPackages"
+                    url = uri("https://maven.pkg.github.com/kolotovkin-sdet/${rootProject.name}")
                     credentials {
-                        username = ""
-                        password = ""
+                        username = System.getenv("GITHUB_ACTOR")
+                        password = System.getenv("GITHUB_TOKEN")
                     }
-                    url = project.version.toString().endsWith('SNAPSHOT') ? "mavenSnapshotsRepoUrl" : "mavenReleasesRepoUrl"
                 }
             }
         }
     }
 }
+
+static def executeCommandWithCheck(String command, String message) {
+    def process = command.execute()
+    process.waitFor()
+    if (process.exitValue() != 0) {
+        throw new RuntimeException(message)
+    }
+}
+
+tasks.register('createReleaseBranchWithTag') {
+    doLast {
+        def version = scmVersion.version
+        def versionParts = version.split('\\.')
+        def majorMinorVersion = "${versionParts[0]}.${versionParts[1]}"
+        def releaseBranchName = "release/${majorMinorVersion}"
+        def branchExists = "git branch --list ${releaseBranchName}".execute().text.trim()
+        if (branchExists) {
+            println("Branch ${releaseBranchName} already exists.")
+        } else {
+            println("Creating branch ${releaseBranchName}...")
+            executeCommandWithCheck("git branch ${releaseBranchName}", "Failed to create branch")
+            executeCommandWithCheck("git add -A", "Failed to add changes")
+            def changesExist = "git diff --cached --quiet".execute().waitFor() == 0
+            if (changesExist) {
+                executeCommandWithCheck("git commit -m 'Creating release branch ${releaseBranchName}'",
+                        "Failed to commit changes")
+            } else {
+                println("No changes to commit.")
+            }
+            executeCommandWithCheck("git push -o ci.skip -u origin ${releaseBranchName}", "Failed to push branch")
+        }
+    }
+}
+
 
 wrapper {
     gradleVersion = libs.versions.gradle.wrapper.get()
