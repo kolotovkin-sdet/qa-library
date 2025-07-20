@@ -1,5 +1,6 @@
 package com.qa.atlibs.grpc.extension;
 
+import com.qa.atlibs.core.Enums.AppType;
 import com.qa.atlibs.core.manager.EnvironmentManager;
 import com.qa.atlibs.grpc.manager.GrpcManager;
 import org.junit.jupiter.api.extension.AfterAllCallback;
@@ -12,7 +13,7 @@ public class GrpcJunitExtension implements BeforeAllCallback, AfterAllCallback {
     public void beforeAll(ExtensionContext context) {
         EnvironmentManager.getEnvironmentVariables().appsConfig().appConfig().entrySet()
                 .stream()
-                .filter(app -> app.getValue().type().equals("grpc"))
+                .filter(app -> app.getValue().type().equals(AppType.GRPC.toString().toLowerCase()))
                 .forEach(entry -> GrpcManager.setupGrpcChannel(entry.getKey()));
     }
 

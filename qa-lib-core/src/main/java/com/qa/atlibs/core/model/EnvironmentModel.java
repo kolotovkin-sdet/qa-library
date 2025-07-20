@@ -1,9 +1,11 @@
 package com.qa.atlibs.core.model;
 
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
 
 public record EnvironmentModel(
+        @JsonProperty("env")
         Map<String, Environment> environment
 ) {
 
@@ -17,7 +19,7 @@ public record EnvironmentModel(
     }
 
     public record Applications(
-            Map<String, AppConfig> appConfig
+            @JsonAnySetter Map<String, AppConfig> appConfig
     ) {
     }
 

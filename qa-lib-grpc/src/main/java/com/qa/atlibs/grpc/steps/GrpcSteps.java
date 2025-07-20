@@ -11,29 +11,33 @@ import com.qa.atlibs.grpc.model.GrpcRequest;
 import com.qa.atlibs.grpc.model.GrpcResponse;
 import com.qa.atlibs.grpc.util.GrpcQaUtil;
 import io.grpc.Metadata;
+import io.grpc.MethodDescriptor;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.MetadataUtils;
+import io.grpc.stub.StreamObserver;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.experimental.Accessors;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.*;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
-@SuppressWarnings({"rawtypes", "unchecked", "ResultOfMethodCallIgnored"})
+@SuppressWarnings({"ResultOfMethodCallIgnored"})
 @Accessors(fluent = true)
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class GrpcSteps<Req extends Message, Res extends Message> {
 
-    private final GrpcRequest grpcRequest = new GrpcRequest();
-    private final GrpcResponse grpcResponse = new GrpcResponse();
+    private final GrpcRequest<Req> grpcRequest = new GrpcRequest<>();
+    private final GrpcResponse<Res> grpcResponse = new GrpcResponse<>();
 
     public static <Req extends Message, Res extends Message> GrpcSteps<Req, Res> prepareRequest(Class<Req> clazz) {
         GrpcSteps<Req, Res> grpcSteps = new GrpcSteps<>();
@@ -51,7 +55,8 @@ public class GrpcSteps<Req extends Message, Res extends Message> {
         return this;
     }
 
-    public GrpcSteps<Req, Res> jsonBodyForRequestIs(String requestBodyPath) throws InvalidProtocolBufferException {
+    @SneakyThrows
+    public GrpcSteps<Req, Res> jsonBodyForRequestIs(String requestBodyPath) {
         grpcRequest.setRequestBody(
                 GrpcQaUtil.toProto(
                         SessionManager.processTestData(
@@ -60,7 +65,8 @@ public class GrpcSteps<Req extends Message, Res extends Message> {
         return this;
     }
 
-    public GrpcSteps<Req, Res> jsonStringForRequestIs(String requestBody) throws InvalidProtocolBufferException {
+    @SneakyThrows
+    public GrpcSteps<Req, Res> jsonStringForRequestIs(String requestBody) {
         grpcRequest.setRequestBody(GrpcQaUtil.toProto(SessionManager.processTestData(requestBody), grpcRequest.getRequestClazz()));
         return this;
     }
@@ -115,16 +121,21 @@ public class GrpcSteps<Req extends Message, Res extends Message> {
         return this;
     }
 
-    public GrpcSteps<Req, Res> sendGrpcServiceStreamingRequest(Function<Req, List<Res>> call) {
+    public GrpcSteps<Req, Res> sendGrpcServiceStreamingRequest(Function<Req, Iterator<Res>> call) {
         try {
-            if (grpcRequest.getRequestBody() != null || !grpcRequest.getRequestClazz().equals(Empty.class)) {
-                grpcResponse.setResponseBodies(call.apply((Req) grpcRequest.getRequestBody()));
-            } else {
-                grpcResponse.setResponseBodies(call.apply(null));
-            }
+            Iterator<Res> iterator;
+            if (grpcRequest.getRequestBody() != null || !grpcRequest.getRequestClazz().equals(Empty.class))
+                iterator = call.apply(grpcRequest.getRequestBody());
+            else
+                iterator = call.apply(null);
+
+            List<Res> responses = new ArrayList<>();
+            iterator.forEachRemaining(responses::add);
+
             grpcResponse.setStatus(GrpcManager.getMetadataInterceptor().getStatus());
             grpcResponse.setStatusCode(GrpcManager.getMetadataInterceptor().getStatus().getCode());
             grpcResponse.setResponseMetadata(GrpcManager.getMetadataInterceptor().getMetadata());
+            grpcResponse.setResponseBodies(responses);
         } catch (StatusRuntimeException e) {
             grpcResponse.setDescription(e.getStatus().getDescription());
             grpcResponse.setCause(e.getStatus().getCause());
@@ -132,36 +143,78 @@ public class GrpcSteps<Req extends Message, Res extends Message> {
         return this;
     }
 
-    public GrpcSteps<Req, Res> sendGrpcClientStreamingRequest(Function<List<Req>, Res> call) {
+    public GrpcSteps<Req, Res> sendGrpcClientStreamingRequest(
+            Function<StreamObserver<Res>, StreamObserver<Req>> call) {
         try {
-            if (grpcRequest.getRequestBodies() != null || !grpcRequest.getRequestClazz().equals(Empty.class)) {
-                grpcResponse.setResponseBody(call.apply(grpcRequest.getRequestBodies()));
-            } else {
-                grpcResponse.setResponseBody(call.apply(null));
-            }
-            grpcResponse.setStatus(GrpcManager.getMetadataInterceptor().getStatus());
-            grpcResponse.setStatusCode(GrpcManager.getMetadataInterceptor().getStatus().getCode());
-            grpcResponse.setResponseMetadata(GrpcManager.getMetadataInterceptor().getMetadata());
-        } catch (StatusRuntimeException e) {
-            grpcResponse.setDescription(e.getStatus().getDescription());
-            grpcResponse.setCause(e.getStatus().getCause());
+            CountDownLatch latch = new CountDownLatch(1);
+            AtomicReference<Res> respRef = new AtomicReference<>();
+
+            StreamObserver<Res> responseObserver = new StreamObserver<>() {
+                @Override public void onNext(Res r) { respRef.set(r); }
+                @Override public void onError(Throwable t) {
+                    if (t instanceof StatusRuntimeException sre) {
+                        grpcResponse.setDescription(sre.getStatus().getDescription());
+                        grpcResponse.setCause(sre.getStatus().getCause());
+                    }
+                    latch.countDown();
+                }
+                @Override public void onCompleted() {
+                    grpcResponse.setResponseBody(respRef.get());
+                    grpcResponse.setStatus(GrpcManager.getMetadataInterceptor().getStatus());
+                    grpcResponse.setStatusCode(GrpcManager.getMetadataInterceptor().getStatus().getCode());
+                    grpcResponse.setResponseMetadata(GrpcManager.getMetadataInterceptor().getMetadata());
+                    latch.countDown();
+                }
+            };
+
+            StreamObserver<Req> requestObserver = call.apply(responseObserver);
+
+            var bodies = grpcRequest.getRequestBodies();
+            if (bodies != null) bodies.forEach(requestObserver::onNext);
+            requestObserver.onCompleted();
+
+            latch.await(1, TimeUnit.MINUTES);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
         return this;
     }
 
-    public GrpcSteps<Req, Res> sendGrpcBidirectionalStreamingRequest(Function<List<Req>, List<Res>> call) {
+    public GrpcSteps<Req, Res> sendGrpcBidirectionalStreamingRequest(
+            Function<StreamObserver<Res>, StreamObserver<Req>> call) {
         try {
-            if (grpcRequest.getRequestBodies() != null || !grpcRequest.getRequestClazz().equals(Empty.class)) {
-                grpcResponse.setResponseBodies(call.apply(grpcRequest.getRequestBodies()));
-            } else {
-                grpcResponse.setResponseBodies(call.apply(null));
+            CountDownLatch latch = new CountDownLatch(1);
+            List<Res> responses = new ArrayList<>();
+
+            StreamObserver<Res> responseObserver = new StreamObserver<>() {
+                @Override public void onNext(Res r) { responses.add(r); }
+                @Override public void onError(Throwable t) {
+                    if (t instanceof StatusRuntimeException sre) {
+                        grpcResponse.setDescription(sre.getStatus().getDescription());
+                        grpcResponse.setCause(sre.getStatus().getCause());
+                    }
+                    latch.countDown();
+                }
+                @Override public void onCompleted() {
+                    grpcResponse.setResponseBodies(responses);
+                    grpcResponse.setStatus(GrpcManager.getMetadataInterceptor().getStatus());
+                    grpcResponse.setStatusCode(GrpcManager.getMetadataInterceptor().getStatus().getCode());
+                    grpcResponse.setResponseMetadata(GrpcManager.getMetadataInterceptor().getMetadata());
+                    latch.countDown();
+                }
+            };
+
+            StreamObserver<Req> requestObserver = call.apply(responseObserver);
+
+            var bodies = grpcRequest.getRequestBodies();
+            if (bodies != null) {
+                bodies.forEach(requestObserver::onNext);
             }
-            grpcResponse.setStatus(GrpcManager.getMetadataInterceptor().getStatus());
-            grpcResponse.setStatusCode(GrpcManager.getMetadataInterceptor().getStatus().getCode());
-            grpcResponse.setResponseMetadata(GrpcManager.getMetadataInterceptor().getMetadata());
-        } catch (StatusRuntimeException e) {
-            grpcResponse.setDescription(e.getStatus().getDescription());
-            grpcResponse.setCause(e.getStatus().getCause());
+            requestObserver.onCompleted();
+
+            latch.await(1, TimeUnit.MINUTES);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
         return this;
     }
@@ -187,7 +240,7 @@ public class GrpcSteps<Req extends Message, Res extends Message> {
     }
 
     public GrpcSteps<Req, Res> jsonResponseIs(String responseBodyPath) {
-        assertThat(grpcResponse.getStatus()).isEqualTo(Status.OK);
+        assertThat(grpcResponse.getStatus().getCode()).isEqualTo(Status.Code.OK);
 
         try {
             String expectedResult = SessionManager.processTestData(TestDataManager.getTestFileData(responseBodyPath));
@@ -216,16 +269,19 @@ public class GrpcSteps<Req extends Message, Res extends Message> {
     }
 
     public GrpcSteps<Req, Res> streamingResponseQtyIs(int qty) {
+        assertThat(grpcResponse.getStatus().getCode()).isEqualTo(Status.Code.OK);
         assertThat(grpcResponse.getResponseBodies()).hasSize(qty);
         return this;
     }
 
     public GrpcSteps<Req, Res> streamingResponseIsEmpty() {
+        assertThat(grpcResponse.getStatus().getCode()).isEqualTo(Status.Code.OK);
         assertThat(grpcResponse.getResponseBodies()).isEmpty();
         return this;
     }
 
     public GrpcSteps<Req, Res> jsonResponsesAre(List<String> responseBodyPaths) {
+        assertThat(grpcResponse.getStatus().getCode()).isEqualTo(Status.Code.OK);
         assertThat(grpcResponse.getResponseBodies()).hasSize(responseBodyPaths.size());
 
         var processedExpectedResponses = responseBodyPaths.stream()
@@ -236,7 +292,7 @@ public class GrpcSteps<Req extends Message, Res extends Message> {
         var processedActualResponses = grpcResponse.getResponseBodies().stream()
                 .map(body -> {
                     try {
-                        return SessionManager.processTestData(TestDataManager.getTestFileData(GrpcQaUtil.toJson((Res) body)));
+                        return SessionManager.processTestData(GrpcQaUtil.toJson(body));
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
